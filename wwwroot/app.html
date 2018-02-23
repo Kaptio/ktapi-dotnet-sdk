@@ -28,7 +28,6 @@
 
     <div ng-app="BlogApp" ng-controller="AppController as ctrl" ng-cloak="true">
 
-
         <div>
             <div class="slds-context-bar">
                 <div class="slds-context-bar__primary">
@@ -57,7 +56,7 @@
                 <nav class="slds-context-bar__secondary" role="navigation">
                     <ul class="slds-grid">
                         <li class="slds-context-bar__item slds-is-active">
-                            <a href="javascript:void(0);" class="slds-context-bar__label-action" title="Home">
+                            <a href="javascript:void(0);" ng-click="ctrl.showPackegesList()" class="slds-context-bar__label-action" title="Home">
                                 <span class="slds-truncate" title="Packages">Packages</span>
                             </a>
                         </li>
@@ -70,16 +69,37 @@
 
         <div style="padding: 20px;">
             <div ng-if="ctrl.mode == 'list'">
-                    <div ng-repeat="package in ctrl.packages" class="c-package-item">
-                        <a href="#!/{{ package.sfdcId }}">{{ package.name }}</a>
-                    </div>
-                    <div>
-                        {{ctrl.pagination}}
-                    </div>
+                <div ng-repeat="package in ctrl.packages" class="c-package-item">
+                    {{package.id}}. <a href="#!/{{ package.sfdcId }}">{{ package.name }}</a>
                 </div>
-                <div ng-if="ctrl.mode == 'view'">
-                    {{ctrl.selectedPackage.details.Name}}
+                <br />
+                <div>
+                    <span>
+                        <button class="slds-button" ng-click="ctrl.pagination.prev()">&lt; Prev</button>
+                    </span>
+                    &nbsp;
+                    <span>
+                        {{ctrl.pagination.page + 1}} / {{ctrl.pagination.totalPages}}
+                    </span>
+                    &nbsp;
+                    <span>
+                        <button class="slds-button" ng-click="ctrl.pagination.next()">Next &gt;</button>
+                    </span>
                 </div>
+            </div>
+            <div ng-if="ctrl.mode == 'view'">
+                <!-- VIEW DETAILS -->
+                <h1 style="font-size: 2em;">{{ctrl.selectedPackage.details.name}}</h1>
+                <p>Availabilities:</p>
+                <p ng-repeat="availability in ctrl.selectedPackage.details.availabilities">
+                    - {{availability.date}} | {{availability.sales_price}} {{availability.currency_iso_code}}
+                </p>
+                <p ng-if="!ctrl.selectedPackage.details.availabilities">None</p>
+                <p>Components:</p>
+                <p ng-repeat="component in ctrl.selectedPackage.details.components">
+                    - {{component.name}}
+                </p>
+                <p ng-if="!ctrl.selectedPackage.details.availabilities">None</p>
             </div>
         </div>
 
@@ -125,9 +145,11 @@
                         console.log('ERROR')
                         if (response.data && response.data.exception) {
                             console.log(response.data.exception);
+                            alert(response.data.exception);
                             throw response.data.exception;
                         } else {
                             console.log(response);
+                            alert('Server Exception. Please contact Administrator');
                             throw response;
                         }
                     }
@@ -153,7 +175,21 @@
             ctrl.packages = [];
             ctrl.pagination = {
                 size: 10,
-                page: 0
+                page: 0,
+                total: 0,
+                totalPages: 0,
+                next: function() {
+                    if (this.page < this.totalPages) {
+                        this.page = this.page + 1;
+                        ctrl.showPackegesList();
+                    }
+                },
+                prev: function() {
+                    if (this.page > 0) {
+                        this.page = this.page - 1;
+                        ctrl.showPackegesList();
+                    }
+                }
             };
 
             ctrl.selectedPackage = null;
@@ -166,11 +202,9 @@
                 var re = /\/([a-zA-Z0-9]{15,18})$/g;
                 if (value) {
                     var res = re.exec(value);
-                    console.log(res);
                     if (res && res.length === 2) {
                         ctrl.showPackageDetails(res[1])
                     } else {
-                        $location.path('/');
                         ctrl.showPackegesList();
                     }
                 } else {
@@ -179,10 +213,12 @@
             });
 
             ctrl.showPackegesList = function() {
+                $location.path('/');
                 RemoteService.getPackages(ctrl.pagination).then(
                     function success(data) {
                         ctrl.packages = data.packages;
                         ctrl.pagination.total = data.total;
+                        ctrl.pagination.totalPages = Math.ceil(ctrl.pagination.total / ctrl.pagination.size);
                         for (p of ctrl.packages) {
                             p.data = JSON.parse(p.data);
                             console.log(p);
