@@ -1,0 +1,48 @@
+.c-hidden {
+    display: none !important;
+}
+
+.c-spinner_container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 99999;
+}
+.c-spinner {
+    position: relative;
+    display: inline-block;
+    top: 50%;
+    left: 50%;
+    margin-top: -50px;
+    margin-left: -50px;
+    width: 100px;
+    height: 100px;
+    border: 2px solid #1688ee;
+    border-radius: 50%;
+    animation: spin 0.75s infinite linear;
+}
+.c-spinner-1 {
+    border-top-width: 0;
+}
+.c-spinner::before,
+.c-spinner::after {
+    left: -2px;
+    top: -2px;
+    display: none;
+    position: absolute;
+    content: '';
+    width: inherit;
+    height: inherit;
+    border: inherit;
+    border-radius: inherit;
+}
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

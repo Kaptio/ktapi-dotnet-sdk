@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>KTAPI .NET Client</title>
+    <script
+    src="https://code.jquery.com/jquery-3.2.1.min.js"
+    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+    crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://use.fontawesome.com/14ee000d5e.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,400i,500,700&amp;subset=cyrillic" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.171.0.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/design-system/2.5.2/styles/salesforce-lightning-design-system.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-route.min.js"></script>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <div ng-app="BlogApp" ng-controller="AppController as ctrl" ng-cloak="true">
+
+
+        <div>
+            <div class="slds-context-bar">
+                <div class="slds-context-bar__primary">
+                    <div class="slds-context-bar__item slds-context-bar__dropdown-trigger slds-dropdown-trigger slds-dropdown-trigger_click slds-no-hover">
+                        <div class="slds-context-bar__icon-action">
+                            <button class="slds-button slds-icon-waffle_container slds-context-bar__button" title="Description of the icon when needed">
+                                <span class="slds-icon-waffle">
+                                <span class="slds-r1"></span>
+                                <span class="slds-r2"></span>
+                                <span class="slds-r3"></span>
+                                <span class="slds-r4"></span>
+                                <span class="slds-r5"></span>
+                                <span class="slds-r6"></span>
+                                <span class="slds-r7"></span>
+                                <span class="slds-r8"></span>
+                                <span class="slds-r9"></span>
+                                </span>
+                                <span class="slds-assistive-text">Open App Launcher</span>
+                            </button>
+                        </div>
+                        <span class="slds-context-bar__label-action slds-context-bar__app-name">
+                            <span class="slds-truncate" title="KTAPI Client">KTAPI Client Kit</span>
+                        </span>
+                    </div>
+                </div>
+                <nav class="slds-context-bar__secondary" role="navigation">
+                    <ul class="slds-grid">
+                        <li class="slds-context-bar__item slds-is-active">
+                            <a href="javascript:void(0);" class="slds-context-bar__label-action" title="Home">
+                                <span class="slds-truncate" title="Packages">Packages</span>
+                            </a>
+                        </li>
+
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+
+        <div style="padding: 20px;">
+            <div ng-if="ctrl.mode == 'list'">
+                    <div ng-repeat="package in ctrl.packages" class="c-package-item">
+                        <a href="#!/{{ package.sfdcId }}">{{ package.name }}</a>
+                    </div>
+                    <div>
+                        {{ctrl.pagination}}
+                    </div>
+                </div>
+                <div ng-if="ctrl.mode == 'view'">
+                    {{ctrl.selectedPackage.details.Name}}
+                </div>
+            </div>
+        </div>
+
+        <!-- SPINNER -->
+        <div class="c-spinner_container c-hidden">
+            <div class="c-spinner c-spinner-1"></div>
+        </div>
+
+
+    </div>
+
+    <script>
+        window.app = angular.module('BlogApp', ['ngRoute'])
+        .factory('RemoteService', [ '$q', '$rootScope', '$filter', '$timeout', '$http', function ($q, $rootScope, $filter, $timeout, $http) {
+            var f = this;
+
+            f.getPackages = function(pagination) {
+                if (pagination) {
+                    return f.remoteCall('GET', '/api/package/page/' + pagination.page + '/' + pagination.size);
+                } else {
+                    return f.remoteCall('GET', '/api/package');
+                }
+            }
+
+            f.getPackageById = function(packageId) {
+                return f.remoteCall('GET', '/api/package/' + packageId);
+            }
+
+            f.remoteCall = function(method, url) {
+                f.spinner.show();
+                return $http({
+                    method: method,
+                    url: url
+                    }).then(function successCallback(response) {
+                        f.spinner.hide();
+                        console.log(response);
+                        if (response.data) {
+                            return response.data;
+                        }
+                        return response;
+                    }, function errorCallback(response) {
+                        f.spinner.hide();
+                        console.log('ERROR')
+                        if (response.data && response.data.exception) {
+                            console.log(response.data.exception);
+                            throw response.data.exception;
+                        } else {
+                            console.log(response);
+                            throw response;
+                        }
+                    }
+                );
+            };
+
+            f.spinner = {
+                show: function() {
+                    jQuery('.c-spinner_container').removeClass('c-hidden');
+                },
+                hide: function() {
+                    jQuery('.c-spinner_container').addClass('c-hidden');
+                }
+            };
+
+
+            return f;
+        }])
+        .controller('AppController', ['$scope', '$rootScope', '$timeout', '$location', 'RemoteService', function($scope, $rootScope, $timeout, $location, RemoteService) {
+            var ctrl = this;
+
+            ctrl.mode = 'list';
+            ctrl.packages = [];
+            ctrl.pagination = {
+                size: 10,
+                page: 0
+            };
+
+            ctrl.selectedPackage = null;
+
+            // Router
+            $scope.$watch(function() {
+                return $location.path();
+            }, function(value) {
+                console.log(value);
+                var re = /\/([a-zA-Z0-9]{15,18})$/g;
+                if (value) {
+                    var res = re.exec(value);
+                    console.log(res);
+                    if (res && res.length === 2) {
+                        ctrl.showPackageDetails(res[1])
+                    } else {
+                        $location.path('/');
+                        ctrl.showPackegesList();
+                    }
+                } else {
+                    ctrl.showPackegesList();
+                }
+            });
+
+            ctrl.showPackegesList = function() {
+                RemoteService.getPackages(ctrl.pagination).then(
+                    function success(data) {
+                        ctrl.packages = data.packages;
+                        ctrl.pagination.total = data.total;
+                        for (p of ctrl.packages) {
+                            p.data = JSON.parse(p.data);
+                            console.log(p);
+                        }
+                        ctrl.mode = 'list';
+                    },
+                    function error() {
+
+                    }
+                );
+            };
+
+            ctrl.showPackageDetails = function(packageId) {
+                return RemoteService.getPackageById(packageId).then(
+                    function success(data) {
+                        ctrl.selectedPackage = data.package;
+                        ctrl.selectedPackage.details = JSON.parse(ctrl.selectedPackage.details);
+                        ctrl.mode = 'view';
+                    },
+                    function error() {
+                        console.log('ERROR');
+                    }
+                );
+            };
+
+            $timeout(function(){
+
+            })
+
+        }]);
+   </script>
+
+</body>
+</html>
