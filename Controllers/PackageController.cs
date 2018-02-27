@@ -66,8 +66,8 @@ namespace Client2.Controllers
             var package = PackageService.GetPackageWithDetails(id, _context, _configuration);
             if (package == null)
             {
-                return
-                NotFound();
+                output.Add("exception", "Package not found.");
+                return NotFound(output);
             }
             output.Add("package", package);
             return new ObjectResult(output);

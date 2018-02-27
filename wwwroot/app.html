@@ -90,17 +90,40 @@
             <div ng-if="ctrl.mode == 'view'">
                 <!-- VIEW DETAILS -->
                 <h1 style="font-size: 2em;">{{ctrl.selectedPackage.details.name}}</h1>
-                <p>Availabilities:</p>
-                <p ng-repeat="availability in ctrl.selectedPackage.details.availabilities">
-                    - {{availability.date}} | {{availability.sales_price}} {{availability.currency_iso_code}}
-                </p>
-                <p ng-if="!ctrl.selectedPackage.details.availabilities">None</p>
+                <div style="width: 50%;">
+                    <div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="total-people">Total people</label>
+                            <div class="slds-form-element__control">
+                                <input type="number" id="total-people" ng-model="ctrl.userInput.totalPeople" class="slds-input" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="availabilities">Availabilities</label>
+                        <div class="slds-form-element__control">
+                            <div class="slds-select_container">
+                            <select class="slds-select" id="availabilities" ng-model="ctrl.userInput.cannelId" ng-options="option.channel_id as option.date for option in ctrl.selectedPackage.details.availabilities track by option.channel_id">
+                                <option value="">- select -</option>
+                            </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
                 <p>Components:</p>
                 <p ng-repeat="component in ctrl.selectedPackage.details.components">
                     - {{component.name}}
                 </p>
-                <p ng-if="!ctrl.selectedPackage.details.availabilities">None</p>
             </div>
+
+            <hr />
+            <div>
+                {{ctrl.userInput}}
+            </div>
+
         </div>
 
         <!-- SPINNER -->
@@ -193,6 +216,10 @@
             };
 
             ctrl.selectedPackage = null;
+
+            ctrl.userInput = {
+                totalPeople: 1
+            }
 
             // Router
             $scope.$watch(function() {

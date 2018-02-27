@@ -75,6 +75,12 @@ namespace Client2.Services
             Console.WriteLine("PackageId: "+packageId);
 
             var package = context.Package.FirstOrDefault(t => t.SfdcId == packageId);
+
+            if (package == null)
+            {
+                return null;
+            }
+
             var lastUpdatedInHours = package.UpdatedAt != null ?
                         ((TimeSpan)(DateTime.Now - package.UpdatedAt)).TotalHours :
                         0;
