@@ -27,7 +27,6 @@ namespace Client2.Controllers
 
         }
 
-
         [HttpGet]
         public IActionResult GetAllPackages()
         {
@@ -52,7 +51,7 @@ namespace Client2.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR: " + ex.Message);
+                Console.WriteLine("ERROR: " + ex.GetBaseException());
                 output.Add("exception", ex.Message);
                 return StatusCode(500, output);
             }
@@ -73,58 +72,18 @@ namespace Client2.Controllers
             return new ObjectResult(output);
         }
 
-
-        [HttpPost]
-        public IActionResult Create([FromBody] Package item)
+        [HttpPost("{id}/prices", Name = "GetPackagePaces")]
+        public IActionResult GetPackegePrices(string id, [FromBody] object data)
         {
-            if (item == null)
-            {
-                return BadRequest();
-            }
+            Console.WriteLine("FFFFFF");
+            Console.WriteLine(data);
 
-            _context.Package.Add(item);
-            _context.SaveChanges();
-
-            return CreatedAtRoute("GetPackage", new { id = item.Id }, item);
+            var output = new Dictionary<string, object>();
+            var prices = PackageService.GetPackagePrices(id, data, _context, _configuration);
+            output.Add("prices", prices);
+            return new ObjectResult(output);
         }
 
-
-        [HttpPut("{id}")]
-        public IActionResult Update(long id, [FromBody] Package item)
-        {
-            if (item == null || item.Id != id)
-            {
-                return BadRequest();
-            }
-
-            var package = _context.Package.FirstOrDefault(t => t.Id == id);
-            if (package == null)
-            {
-                return NotFound();
-            }
-
-            package.Name = item.Name;
-            package.Data = item.Data;
-
-            _context.Package.Update(package);
-            _context.SaveChanges();
-            return new NoContentResult();
-        }
-
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var todo = _context.Package.FirstOrDefault(t => t.Id == id);
-            if (todo == null)
-            {
-                return NotFound();
-            }
-
-            _context.Package.Remove(todo);
-            _context.SaveChanges();
-            return new NoContentResult();
-        }
     }
 
 }

@@ -27,7 +27,10 @@ namespace Client2.Services
                 appState.PackageRetrieved = true;
                 appState.PackageRetrievedAt = DateTime.Now;
 
-                var packagesJArray = KtapiUtils.GetPackagesFromKTAPI(configuration["KTAPI:Key"], configuration["KTAPI:Secret"]).Result;
+                var packagesJArray = KtapiService.GetPackagesFromKTAPI(
+                                                            configuration["KTAPI:Key"],
+                                                            configuration["KTAPI:Secret"],
+                                                            configuration["KTAPI:Endpoint"]).Result;
                 foreach (Newtonsoft.Json.Linq.JObject pObject in packagesJArray)
                 {
                     var package = context.Package.FirstOrDefault(t => t.SfdcId == (String)pObject["id"]);
@@ -47,11 +50,8 @@ namespace Client2.Services
 
             if (size != null && page != null)
             {
-
-                Console.WriteLine("DD: "+size+" : "+page);
-
                 return context.Package
-                                    .OrderBy(x => x.Id)
+                                    .OrderByDescending(x => x.Id)
                                     .Skip((int)page * (int)size)
                                     .Take((int)size)
                                     .Select(item => new Package
@@ -72,8 +72,6 @@ namespace Client2.Services
         public static Package GetPackageWithDetails(string packageId, PackageContext context, IConfiguration configuration)
         {
 
-            Console.WriteLine("PackageId: "+packageId);
-
             var package = context.Package.FirstOrDefault(t => t.SfdcId == packageId);
 
             if (package == null)
@@ -87,12 +85,12 @@ namespace Client2.Services
 
             if (package.Details == null || package.UpdatedAt == null || lastUpdatedInHours > 24)
             {
-                var packageJObject = KtapiUtils.GetPackageDetailsFromKTAPI(
+                var packageJObject = KtapiService.GetPackageDetailsFromKTAPI(
                                                                         packageId,
                                                                         configuration["KTAPI:Key"],
-                                                                        configuration["KTAPI:Secret"]).Result;
+                                                                        configuration["KTAPI:Secret"],
+                                                                        configuration["KTAPI:Endpoint"]).Result;
 
-                Console.WriteLine(packageJObject);
                 package.Details = packageJObject.ToString();
                 package.UpdatedAt = DateTime.Now;
 
@@ -103,6 +101,22 @@ namespace Client2.Services
             return package;
         }
 
+        public static object GetPackagePrices(string packageId, object data, PackageContext context, IConfiguration configuration)
+        {
+
+
+            var packageJObject = KtapiService.GetPackagePricesFromKTAPI(
+                                                                    packageId,
+                                                                    data,
+                                                                    configuration["KTAPI:Key"],
+                                                                    configuration["KTAPI:Secret"],
+                                                                    configuration["KTAPI:Endpoint"]).Result;
+
+            return packageJObject;
+
+        }
+
     }
+
 }
 

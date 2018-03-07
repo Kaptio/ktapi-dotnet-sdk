@@ -23,6 +23,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-route.min.js"></script>
 
     <link rel="stylesheet" href="/style.css">
+
+    <style>
+        .c-component-required {
+            background-color: #fbfb7c !important;
+        }
+    </style>
+
 </head>
 <body>
 
@@ -90,38 +97,95 @@
             <div ng-if="ctrl.mode == 'view'">
                 <!-- VIEW DETAILS -->
                 <h1 style="font-size: 2em;">{{ctrl.selectedPackage.details.name}}</h1>
-                <div style="width: 50%;">
-                    <div>
-                        <div class="slds-form-element">
-                            <label class="slds-form-element__label" for="total-people">Total people</label>
-                            <div class="slds-form-element__control">
-                                <input type="number" id="total-people" ng-model="ctrl.userInput.totalPeople" class="slds-input" />
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+
+                        <div class="c-schedules" style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                            <div ng-repeat="s in ctrl.selectedPackage.details.package_schedules">
+                                <div>
+                                    <b>{{s.name}}</b>
+                                </div>
+                                <div ng-repeat="tp in s.time_periods">
+                                    Start Date: {{tp.start_date}} | Days of the Week: {{tp.days_of_week}}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="slds-form-element">
-                        <label class="slds-form-element__label" for="availabilities">Availabilities</label>
-                        <div class="slds-form-element__control">
-                            <div class="slds-select_container">
-                            <select class="slds-select" id="availabilities" ng-model="ctrl.userInput.cannelId" ng-options="option.channel_id as option.date for option in ctrl.selectedPackage.details.availabilities track by option.channel_id">
-                                <option value="">- select -</option>
-                            </select>
+
+                        <div>
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="total-people">Total people</label>
+                                <div class="slds-form-element__control">
+                                    <input type="number" id="total-people" ng-model="ctrl.userInput.total_people" class="slds-input" />
+                                </div>
                             </div>
                         </div>
-                    </div>
 
+                        <h1 style="margin-top: 20px; font-size: 24px;">Components:</h1>
+                        <div ng-repeat="component in ctrl.selectedPackage.details.components">
+                            <div
+                                style="background-color: #e0e0e0; padding: 5px 10px; margin-top: 20px;"
+                                ng-class="{'c-component-required': component.id == ctrl.selectedPackage.details.primary_pricing_component_id || component.id == ctrl.selectedPackage.details.secondary_pricing_component_id}">
+                                {{component.name}}
+                            </div>
+
+                            <div ng-repeat="option in component.options" style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                                <div><b>{{option.item.name}}</b></div>
+                                <div ng-if="option.offered_item_options.length">
+                                    Item options:
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-select_container">
+                                            <select
+                                                class="slds-select"
+                                                ng-model="option.offered_item_options._selection"
+                                                ng-change="ctrl.calculateRequestBody()"
+                                                ng-options="item.item_option.id as item.item_option.name for item in option.offered_item_options track by item.item_option.id">
+                                                <option value="">- select -</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div ng-if="option.offered_item_type_options.length">
+                                    Item Types options:
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-select_container">
+                                            <select
+                                                class="slds-select"
+                                                ng-model="option.offered_item_type_options._selection"
+                                                ng-change="ctrl.calculateRequestBody()"
+                                                ng-options="item.item_type_option.id as item.item_type_option.name for item in option.offered_item_type_options track by item.item_type_option.id">
+                                                <option value="">- select -</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--
+                                <div ng-if="option.offered_add_ons.length">
+                                    Addons
+                                    <div ng-repeat="item1 in option.offered_add_ons">
+                                        {{item1.item_option.name}}XXXXX
+                                    </div>
+                                </div> -->
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="slds-col">
+                        <div>
+                            <button ng-click="ctrl.getPrices()" class="slds-button slds-button_brand">Get Prices</button>
+                        </div>
+                        <br />
+                        <div style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                            <div>Response</div>
+                            <pre>{{ctrl.prices | json}}</pre>
+                        </div>
+                        <br />
+                        <div>
+                            <div>Get Price Request Body</div>
+                            <pre>{{ctrl.userInput | json}}</pre>
+                        </div>
+                    </div>
                 </div>
-
-                <p>Components:</p>
-                <p ng-repeat="component in ctrl.selectedPackage.details.components">
-                    - {{component.name}}
-                </p>
-            </div>
-
-            <hr />
-            <div>
-                {{ctrl.userInput}}
             </div>
 
         </div>
@@ -151,11 +215,16 @@
                 return f.remoteCall('GET', '/api/package/' + packageId);
             }
 
-            f.remoteCall = function(method, url) {
+            f.getPackagePrices = function(packageId, data) {
+                return f.remoteCall('POST', '/api/package/' + packageId + '/prices', data);
+            }
+
+            f.remoteCall = function(method, url, data) {
                 f.spinner.show();
                 return $http({
                     method: method,
-                    url: url
+                    url: url,
+                    data: data,
                     }).then(function successCallback(response) {
                         f.spinner.hide();
                         console.log(response);
@@ -217,8 +286,51 @@
 
             ctrl.selectedPackage = null;
 
+            ctrl.prices = {};
+
             ctrl.userInput = {
-                totalPeople: 1
+                channel_id: 'a13b000000ApZXCAA3',
+                total_people: 1,
+                date: null,
+                components: []
+            }
+
+            ctrl.calculateRequestBody = function() {
+                ctrl.userInput.components = [];
+                // ctrl.userInput.date = ctrl.selectedPackage.details.package_schedules[0].time_periods[0].start_date
+                ctrl.userInput.date = '2018-06-09';
+                var index = 0;
+                for (component of ctrl.selectedPackage.details.components) {
+                    for (option of component.options) {
+                        if (option.offered_item_options._selection) {
+                            ctrl.userInput.components.push({
+                                selection: [
+                                    {
+                                        "item_type_option_id": option.offered_item_type_options._selection ? option.offered_item_type_options._selection : "",
+                                        "index": index,
+                                        "item_option_id": option.offered_item_options._selection,
+                                        "guests": ctrl.userInput.total_people
+                                    }
+                                ],
+                                "component_id": component.id
+                            });
+                            index = index + 1;
+                        }
+                    }
+                }
+            }
+
+            ctrl.getPrices = function() {
+                ctrl.calculateRequestBody();
+                RemoteService.getPackagePrices(ctrl.selectedPackage.sfdcId, ctrl.userInput)
+                .then(function success(data) {
+                    console.log('DDDDDDD');
+                    console.log(data);
+                    ctrl.prices = data.prices;
+                    // if (data.prices && data.prices.message) {
+                    //     alert(data.prices.message);
+                    // }
+                });
             }
 
             // Router
@@ -238,6 +350,10 @@
                     ctrl.showPackegesList();
                 }
             });
+
+            ctrl.log = function(val) {
+                console.log(val);
+            }
 
             ctrl.showPackegesList = function() {
                 $location.path('/');
