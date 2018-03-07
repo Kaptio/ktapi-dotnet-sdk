@@ -18,3 +18,6 @@ Example ASP.NET Core 2.0 project for KTAPI integration.
 5. Run `dotnet ef database update` to init database
 6. Run `dotnet run` or `dotnet watch run` (for development)
 7. Open in browser http://localhost:8081/app.html - this is an AngularJS SPA Client. First run will take some time to get all packages from KTAPI and store them to the local DB.
+
+More details here
+https://kaptio.atlassian.net/browse/API-28
