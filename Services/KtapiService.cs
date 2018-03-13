@@ -49,6 +49,21 @@ namespace Client2.Utils
             return prices;
         }
 
+        public async static Task<JObject> GetPackagePricesWithAlternativesFromKTAPI(string packageId, object data, string key, string secret, string endpoint)
+        {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("Authorization", $"Keypair key=\"{key}\" secret=\"{secret}\"");
+            var response = await client.PostAsync(
+                    $"{endpoint}/v1.0/packages/{packageId}/prices_with_alternatives",
+                    new StringContent(data.ToString()));
+            string content = await response.Content.ReadAsStringAsync();
+            var prices = JObject.Parse(content);
+            return prices;
+        }
+
+
     }
 
 }

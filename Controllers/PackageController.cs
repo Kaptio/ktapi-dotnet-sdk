@@ -75,12 +75,24 @@ namespace Client2.Controllers
         [HttpPost("{id}/prices", Name = "GetPackagePaces")]
         public IActionResult GetPackegePrices(string id, [FromBody] object data)
         {
-            Console.WriteLine("FFFFFF");
+
             Console.WriteLine(data);
 
             var output = new Dictionary<string, object>();
             var prices = PackageService.GetPackagePrices(id, data, _context, _configuration);
             output.Add("prices", prices);
+            return new ObjectResult(output);
+        }
+
+        [HttpPost("{id}/prices_with_alternatives", Name = "GetPackagePacesWithAlternatives")]
+        public IActionResult GetPackegePricesWithAlternatives(string id, [FromBody] object data)
+        {
+
+            Console.WriteLine(data);
+
+            var output = new Dictionary<string, object>();
+            var result = PackageService.GetPackagePricesWithAlternatives(id, data, _context, _configuration);
+            output.Add("data", result);
             return new ObjectResult(output);
         }
 

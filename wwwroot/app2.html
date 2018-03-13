@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>KTAPI .NET Client</title>
+    <script
+    src="https://code.jquery.com/jquery-3.2.1.min.js"
+    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+    crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://use.fontawesome.com/14ee000d5e.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,400i,500,700&amp;subset=cyrillic" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.171.0.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/design-system/2.5.2/styles/salesforce-lightning-design-system.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-route.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="/libs/ng-flatpickr.js"></script>
+
+
+    <link rel="stylesheet" href="/style.css">
+
+    <style>
+        .c-component-required {
+            background-color: #fbfb7c !important;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div ng-app="BlogApp" ng-controller="AppController as ctrl" ng-cloak="true">
+
+        <div>
+            <div class="slds-context-bar">
+                <div class="slds-context-bar__primary">
+                    <div class="slds-context-bar__item slds-context-bar__dropdown-trigger slds-dropdown-trigger slds-dropdown-trigger_click slds-no-hover">
+                        <div class="slds-context-bar__icon-action">
+                            <button class="slds-button slds-icon-waffle_container slds-context-bar__button" title="Description of the icon when needed">
+                                <span class="slds-icon-waffle">
+                                <span class="slds-r1"></span>
+                                <span class="slds-r2"></span>
+                                <span class="slds-r3"></span>
+                                <span class="slds-r4"></span>
+                                <span class="slds-r5"></span>
+                                <span class="slds-r6"></span>
+                                <span class="slds-r7"></span>
+                                <span class="slds-r8"></span>
+                                <span class="slds-r9"></span>
+                                </span>
+                                <span class="slds-assistive-text">Open App Launcher</span>
+                            </button>
+                        </div>
+                        <span class="slds-context-bar__label-action slds-context-bar__app-name">
+                            <span class="slds-truncate" title="KTAPI Client">KTAPI Client2 Kit</span>
+                        </span>
+                    </div>
+                </div>
+                <nav class="slds-context-bar__secondary" role="navigation">
+                    <ul class="slds-grid">
+                        <li class="slds-context-bar__item slds-is-active">
+                            <a href="javascript:void(0);" ng-click="ctrl.showPackegesList()" class="slds-context-bar__label-action" title="Home">
+                                <span class="slds-truncate" title="Packages">Packages</span>
+                            </a>
+                        </li>
+
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+
+        <div style="padding: 20px;">
+            <div ng-if="ctrl.mode == 'list'">
+                <div ng-repeat="package in ctrl.packages" class="c-package-item">
+                    {{package.id}}. <a href="#!/{{ package.sfdcId }}">{{ package.name }}</a>
+                </div>
+                <br />
+                <div>
+                    <span>
+                        <button class="slds-button" ng-click="ctrl.pagination.prev()">&lt; Prev</button>
+                    </span>
+                    &nbsp;
+                    <span>
+                        {{ctrl.pagination.page + 1}} / {{ctrl.pagination.totalPages}}
+                    </span>
+                    &nbsp;
+                    <span>
+                        <button class="slds-button" ng-click="ctrl.pagination.next()">Next &gt;</button>
+                    </span>
+                </div>
+            </div>
+            <div ng-if="ctrl.mode == 'view' && ctrl.selectedPackage">
+                <!-- VIEW DETAILS -->
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col slds-size_1-of-2">
+                        <h1 style="font-size: 2em;">{{ctrl.selectedPackage.details.name}}</h1>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2">
+                        <h1 ng-if="!ctrl.priceCalculation" style="font-size: 2em; text-align: right;">
+                            {{ctrl.getTotalPricesResults()}}
+                        </h1>
+                        <h1 ng-if="ctrl.priceCalculation" style="font-size: 2em; text-align: right;">
+                            calculating ...
+                        </h1>
+                    </div>
+                </div>
+
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col slds-size_1-of-2">
+
+                        <div ng-if="ctrl.currentStep == 0">
+                            <div class="c-schedules" style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                                <div ng-repeat="s in ctrl.selectedPackage.details.package_schedules">
+                                    <div>
+                                        <b>Schedule:</b> <b>{{s.name}}</b>
+                                    </div>
+                                    <div ng-repeat="tp in s.time_periods">
+                                        {{tp.start_date}} | {{tp.end_date}} | Days of the Week: {{tp.days_of_week}}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="total-people">Date</label>
+                                <div class="slds-form-element__control">
+                                    <input
+                                        ng-flatpickr
+                                        style="background-color: white; border: 1px solid #dddbda; border-radius: 0.25rem; padding: 0 1rem 0 0.75rem;"
+                                        fp-opts="ctrl.dateOpts"
+                                        fp-on-setup="ctrl.datePostSetup(fpItem)"
+                                        ng-model="ctrl.userInput.date"
+                                        data-enabletime="true"
+                                        class="slds-input" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label" for="total-people">Total people</label>
+                                    <div class="slds-form-element__control">
+                                        <input type="number" id="total-people" ng-model="ctrl.userInput.total_people" class="slds-input" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div
+                            ng-repeat="component in ctrl.selectedPackage.details.components"
+                            ng-if="ctrl.currentStep > 0">
+
+                            <div ng-if="ctrl.currentStep == $index + 1">
+                                <h1 style="margin-top: 20px; font-size: 24px;">Component {{$index + 1}} of {{ctrl.selectedPackage.details.components.length}}:</h1>
+                                <div
+                                    style="background-color: #e0e0e0; padding: 5px 10px; margin-top: 20px;"
+                                    ng-class="{'c-component-required': component.id == ctrl.selectedPackage.details.primary_pricing_component_id || component.id == ctrl.selectedPackage.details.secondary_pricing_component_id}">
+                                    {{component.name}}
+                                </div>
+                                <br />
+                                <div class="slds-form-element__control">
+                                    <div class="slds-select_container">
+                                        <select
+                                            class="slds-select"
+                                            ng-model="component._selected_option"
+                                            ng-change="ctrl.calculateRequestBody()"
+                                            ng-options="option.id as option.item.name for option in component.options">
+                                            <option value="">-select-</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div ng-repeat="option in component.options" ng-if="option.id == component._selected_option" style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                                    <div ng-if="option.offered_item_options.length">
+                                        Item options:
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-select_container">
+                                                <select
+                                                    class="slds-select"
+                                                    ng-model="option._item_selection"
+                                                    ng-change="ctrl.calculateRequestBody()">
+                                                    <option ng-repeat="item in option.offered_item_options" value="{{item.item_option.id}}">{{item.item_option.name}}
+                                                        <span>{{ctrl.showPriceForComponentSelection(component, item.item_option.id)}}</span>
+                                                    </option>
+                                                </select>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div ng-if="option.offered_item_type_options.length">
+                                        Item Types options:
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-select_container">
+                                                <select
+                                                    class="slds-select"
+                                                    ng-model="option._item_type_selection"
+                                                    ng-change="ctrl.calculateRequestBody()"
+                                                    ng-options="item.item_type_option.id as item.item_type_option.name for item in option.offered_item_type_options">
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!--
+                                    <div ng-if="option.offered_add_ons.length">
+                                        Addons
+                                        <div ng-repeat="item1 in option.offered_add_ons">
+                                            {{item1.item_option.name}}XXXXX
+                                        </div>
+                                    </div> -->
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button
+                                ng-click="ctrl.prevComponent()"
+                                ng-disabled="ctrl.currentStep < 1"
+                                class="slds-button slds-button_neutral"
+                                >Prev</button>
+                            <button
+                                ng-click="ctrl.nextComponent()"
+                                ng-disabled="!ctrl.stepIsValid() || ctrl.currentStep == ctrl.selectedPackage.details.components.length"
+                                class="slds-button slds-button_neutral">Next</button>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2">
+                        <!-- <div>
+                            <button ng-click="ctrl.getPrices()" class="slds-button slds-button_brand">Get Prices</button>
+                        </div> -->
+                        <div style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                            <div>Response</div>
+                            <pre>{{ctrl.data | json}}</pre>
+                        </div>
+                        <br />
+                        <div style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                            <div>Get Price Request</div>
+                            <pre>{{ctrl.userInput | json}}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SPINNER -->
+        <div class="c-spinner_container c-hidden">
+            <div class="c-spinner c-spinner-1"></div>
+        </div>
+
+
+    </div>
+
+    <script>
+
+        FlatpickrInstance = null;
+
+        window.app = angular.module('BlogApp', ['ngRoute', 'angular-flatpickr'])
+        .factory('RemoteService', [ '$q', '$rootScope', '$filter', '$timeout', '$http', function ($q, $rootScope, $filter, $timeout, $http) {
+            var f = this;
+
+            f.getPackages = function(pagination) {
+                if (pagination) {
+                    return f.remoteCall('GET', '/api/package/page/' + pagination.page + '/' + pagination.size);
+                } else {
+                    return f.remoteCall('GET', '/api/package');
+                }
+            }
+
+            f.getPackageById = function(packageId) {
+                return f.remoteCall('GET', '/api/package/' + packageId);
+            }
+
+            f.getPackagePricesWithAlternatives = function(packageId, data) {
+                return f.remoteCall('POST', '/api/package/' + packageId + '/prices_with_alternatives', data);
+            }
+
+            f.remoteCall = function(method, url, data) {
+                f.spinner.show();
+                return $http({
+                    method: method,
+                    url: url,
+                    data: data,
+                    }).then(function successCallback(response) {
+                        f.spinner.hide();
+                        console.log(response);
+                        if (response.data) {
+                            return response.data;
+                        }
+                        return response;
+                    }, function errorCallback(response) {
+                        f.spinner.hide();
+                        console.log('ERROR')
+                        if (response.data && response.data.exception) {
+                            console.log(response.data.exception);
+                            alert(response.data.exception);
+                            throw response.data.exception;
+                        } else {
+                            console.log(response);
+                            alert('Server Exception. Please contact Administrator');
+                            throw response;
+                        }
+                    }
+                );
+            };
+
+            f.spinner = {
+                show: function() {
+                    jQuery('.c-spinner_container').removeClass('c-hidden');
+                },
+                hide: function() {
+                    jQuery('.c-spinner_container').addClass('c-hidden');
+                }
+            };
+
+
+            return f;
+        }])
+        .controller('AppController', ['$scope', '$rootScope', '$timeout', '$location', 'RemoteService', function($scope, $rootScope, $timeout, $location, RemoteService) {
+            var ctrl = this;
+
+            ctrl.mode = 'list';
+            ctrl.packages = [];
+            ctrl.pagination = {
+                size: 10,
+                page: 0,
+                total: 0,
+                totalPages: 0,
+                next: function() {
+                    if (this.page < this.totalPages) {
+                        this.page = this.page + 1;
+                        ctrl.showPackegesList();
+                    }
+                },
+                prev: function() {
+                    if (this.page > 0) {
+                        this.page = this.page - 1;
+                        ctrl.showPackegesList();
+                    }
+                }
+            };
+            ctrl.priceCalculation = false;
+            ctrl.currentStep = 0;
+            ctrl.prevComponent = function() {
+                ctrl.currentStep = ctrl.currentStep - 1;
+                ctrl.recalculatePrices();
+            }
+            ctrl.nextComponent = function() {
+                ctrl.currentStep = ctrl.currentStep + 1;
+                ctrl.recalculatePrices();
+            }
+
+            ctrl.recalculatePrices = function() {
+                var component = ctrl.selectedPackage.details.components[ctrl.currentStep - 1];
+                var componentAlternatives = ctrl.buildAlternatives(component);
+                ctrl.getPrices(componentAlternatives, component.id, ctrl.currentStep - 1);
+            }
+
+            /*
+                "alternative_selections": [{
+                    "index": 4,
+                    "guests": 2,
+                    "item_option_id": "ddddddddddddddd123",
+                    "item_type_option_id": "a0558000004mNILAA2"
+                }, {
+                    "index": 5,
+                    "guests": 2,
+                    "item_option_id": "eeeeeeeeeeeeeee123",
+                    "item_type_option_id": "a0558000004mNILAA2"
+                }, {
+                    "index": 6,
+                    ...
+                }, {
+                    "index": 7,
+                    ...
+                }]
+            */
+
+            ctrl.buildAlternatives = function(component) {
+                var alternatives = [];
+                for (option of component.options) {
+                    for (item1 of option.offered_item_options) {
+                        if (option.offered_item_type_options && option.offered_item_type_options.length > 0) {
+                            for (item2 of option.offered_item_type_options) {
+                                alternatives.push({
+                                    "key": "" + option.id + item1.item_option.id + item2.item_type_option.id,
+                                    "guests": ctrl.userInput.total_people,
+                                    "item_option_id": item1.item_option.id,
+                                    "item_type_option_id": item2.item_type_option.id
+                                });
+                            }
+                        } else {
+                            alternatives.push({
+                                "key": "" + option.id + item1.item_option.id,
+                                "guests": ctrl.userInput.total_people,
+                                "item_option_id": item1.item_option.id,
+                                "item_type_option_id": ""
+                            });
+                        }
+                    }
+                    if (!option._item_selection && option.offered_item_options.length > 0) {
+                        option._item_selection = option.offered_item_options[0].item_option.id;
+                    }
+                    if (!option._item_type_selection && option.offered_item_type_options && option.offered_item_type_options.length > 0) {
+                        option._item_type_selection = option.offered_item_type_options[0].item_type_option.id;
+                    }
+
+                }
+                return alternatives;
+            }
+
+            ctrl.showPriceForComponentSelection = function(component, item_option_id) {
+                //build current selection key
+                var key = '';
+                for (option of component.options) {
+                    key = option.id;
+                    if (component._selected_option == option.id) {
+                        key = key + item_option_id + (option._item_type_selection ? option._item_type_selection : '');
+                        break;
+                    }
+                }
+
+                if (ctrl.pricesWithAlternatives && ctrl.pricesWithAlternatives[key] != null) {
+                    if (typeof ctrl.pricesWithAlternatives[key] === 'string') {
+                        return '(' + ctrl.pricesWithAlternatives[key] + ')';
+                    }
+                    var componentPrice = ctrl.pricesWithAlternatives[key]['prices_by_index'][ctrl.currentStep - 1]['price'];
+                    return '(' + componentPrice['net'] + ' ' +  componentPrice['currency'] + ')';
+                }
+                return '';
+            }
+
+            ctrl.getTotalPricesResults = function() {
+                //build current selection key
+                var component = ctrl.selectedPackage.details.components[ctrl.currentStep - 1];
+                if (!component) {
+                    return;
+                }
+                var key = '';
+                for (option of component.options) {
+                    key = option.id;
+                    if (component._selected_option == option.id && option._item_selection) {
+                        key = key + option._item_selection + (option._item_type_selection ? option._item_type_selection : '');
+                        break;
+                    }
+                }
+
+                console.log('key: ' + key);
+
+                if (ctrl.pricesWithAlternatives && ctrl.pricesWithAlternatives[key] != null) {
+                    console.log('PP: ', ctrl.pricesWithAlternatives[key]);
+                    if (typeof ctrl.pricesWithAlternatives[key] === 'string') {
+                        return ctrl.pricesWithAlternatives[key];
+                    }
+                    var totalPrice = ctrl.pricesWithAlternatives[key].total_price;
+                    return totalPrice.net + ' ' +  totalPrice.currency;
+                } else if (ctrl.originalPrice && ctrl.originalPrice.total_price && ctrl.originalPrice.total_price.net && ctrl.originalPrice.total_price.net > 0) {
+                    return ctrl.originalPrice.total_price.net + ctrl.originalPrice.total_price.currency
+                }
+                return '';
+            }
+
+            ctrl.stepIsValid = function() {
+                if (ctrl.currentStep == 0) {
+                    return ctrl.userInput.date && ctrl.userInput.total_people > 0;
+                } else {
+                    return ctrl.selectedPackage.details.components[ctrl.currentStep - 1]._selected_option != null;
+                }
+
+            }
+
+            ctrl.dateOpts = {
+                dateFormat: 'Y-m-d',
+                defaultDate: null,
+                locale: {
+                    firstDayOfWeek: 1
+                },
+                enable: [
+                    function(date) {
+                        // return true to disable
+                        return ctrl.selectedPackage.details.package_schedules[0].time_periods[0].days_of_week.indexOf(date.getDay() - 1) > -1;
+                    }
+                ],
+                minDate: '2018-06-16',
+                maxDate: '2018-08-26'
+            };
+
+            ctrl.datePostSetup = function(fpItem) {
+                console.log('flatpickr', fpItem);
+            }
+
+            ctrl.selectedPackage = null;
+
+            ctrl.data = {};
+
+            ctrl.userInput = {
+                channel_id: 'a13b000000ApZXCAA3',
+                total_people: 1,
+                date: null,
+                components: []
+            }
+
+            ctrl.calculateRequestBody = function() {
+                ctrl.userInput.components = [];
+                // ctrl.userInput.date = ctrl.selectedPackage.details.package_schedules[0].time_periods[0].start_date
+                // ctrl.userInput.date = '2018-06-09';
+                var index = 0;
+                for (component of ctrl.selectedPackage.details.components) {
+                    for (option of component.options) {
+                        if (component._selected_option == option.id && option._item_selection) {
+                            ctrl.userInput.components.push({
+                                selection: [
+                                    {
+                                        "item_type_option_id": option._item_type_selection ? option._item_type_selection : "",
+                                        "index": index,
+                                        "item_option_id": option._item_selection,
+                                        "guests": ctrl.userInput.total_people
+                                    }
+                                ],
+                                "component_id": component.id
+                            });
+                            index = index + 1;
+                        }
+                    }
+                }
+            }
+
+            ctrl.getPrices = function(alternatives, componentId, index) {
+                ctrl.priceCalculation = true;
+                ctrl.calculateRequestBody();
+                if (!ctrl.userInput.components) {
+                    ctrl.userInput.components = [];
+                }
+                if (ctrl.userInput.components.length - 1 < index) {
+                    ctrl.userInput.components.push({component_id: componentId});
+                }
+                ctrl.userInput.components[index].alternatives = alternatives;
+                RemoteService.getPackagePricesWithAlternatives(ctrl.selectedPackage.sfdcId, ctrl.userInput)
+                .then(function success(response) {
+                    ctrl.priceCalculation = false;
+                    console.log('Prices:');
+                    console.log(response);
+                    ctrl.data = response.data;
+                    ctrl.originalPrice = ctrl.data.original_price;
+                    ctrl.pricesWithAlternatives = ctrl.data.prices2;
+                }, function fail(data) {
+                    ctrl.priceCalculation = false;
+                });
+            }
+
+            // Router
+            $scope.$watch(function() {
+                return $location.path();
+            }, function(value) {
+                console.log(value);
+                var re = /\/([a-zA-Z0-9]{15,18})$/g;
+                if (value) {
+                    var res = re.exec(value);
+                    if (res && res.length === 2) {
+                        ctrl.showPackageDetails(res[1])
+                    } else {
+                        ctrl.showPackegesList();
+                    }
+                } else {
+                    ctrl.showPackegesList();
+                }
+            });
+
+            ctrl.log = function(val) {
+                console.log(val);
+            }
+
+            ctrl.showPackegesList = function() {
+                $location.path('/');
+                RemoteService.getPackages(ctrl.pagination).then(
+                    function success(data) {
+                        ctrl.packages = data.packages;
+                        ctrl.pagination.total = data.total;
+                        ctrl.pagination.totalPages = Math.ceil(ctrl.pagination.total / ctrl.pagination.size);
+                        for (p of ctrl.packages) {
+                            p.data = JSON.parse(p.data);
+                            console.log(p);
+                        }
+                        ctrl.mode = 'list';
+                    },
+                    function error() {
+
+                    }
+                );
+            };
+
+            ctrl.showPackageDetails = function(packageId) {
+                return RemoteService.getPackageById(packageId).then(
+                    function success(data) {
+                        ctrl.selectedPackage = data.package;
+                        ctrl.selectedPackage.details = JSON.parse(ctrl.selectedPackage.details);
+                        try {
+                            ctrl.userInput.total_people = 1;
+                            ctrl.userInput.date = ctrl.selectedPackage.details.package_schedules[0].time_periods[0].start_date;
+                            ctrl.dateOpts.defaultDate = ctrl.userInput.date;
+                        } catch(e) {}
+                        ctrl.currentStep = 0;
+                        ctrl.mode = 'view';
+                    },
+                    function error() {
+                        console.log('ERROR');
+                    }
+                );
+            };
+
+            $timeout(function(){
+
+            })
+
+        }]);
+   </script>
+
+</body>
+</html>

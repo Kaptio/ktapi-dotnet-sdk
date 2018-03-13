@@ -111,6 +111,19 @@
                             </div>
                         </div>
 
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="total-people">Date</label>
+                            <div class="slds-form-element__control">
+                                <input
+                                    ng-flatpickr
+                                    style="background-color: white; border: 1px solid #dddbda; border-radius: 0.25rem; padding: 0 1rem 0 0.75rem;"
+                                    fp-opts="ctrl.dateOpts"
+                                    fp-on-setup="ctrl.datePostSetup(fpItem)"
+                                    ng-model="ctrl.userInput.date"
+                                    data-enabletime="true"
+                                    class="slds-input" />
+                            </div>
+                        </div>
 
                         <div>
                             <div class="slds-form-element">
@@ -298,7 +311,7 @@
             ctrl.calculateRequestBody = function() {
                 ctrl.userInput.components = [];
                 // ctrl.userInput.date = ctrl.selectedPackage.details.package_schedules[0].time_periods[0].start_date
-                ctrl.userInput.date = '2018-06-09';
+                // ctrl.userInput.date = '2018-06-09';
                 var index = 0;
                 for (component of ctrl.selectedPackage.details.components) {
                     for (option of component.options) {

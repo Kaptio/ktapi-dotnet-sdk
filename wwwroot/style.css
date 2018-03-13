@@ -2,6 +2,10 @@
     display: none !important;
 }
 
+.c-rigth {
+    text-align: right;
+}
+
 .c-spinner_container {
     position: fixed;
     top: 0;
