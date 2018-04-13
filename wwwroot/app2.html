@@ -507,15 +507,14 @@
                 components: []
             }
 
-            ctrl.calculateRequestBody = function() {
+            ctrl.calculateRequestBody = function(alternatives, alternatives_index) {
                 ctrl.userInput.components = [];
-                // ctrl.userInput.date = ctrl.selectedPackage.details.package_schedules[0].time_periods[0].start_date
-                // ctrl.userInput.date = '2018-06-09';
                 var index = 0;
+                var j = 0;
                 for (component of ctrl.selectedPackage.details.components) {
                     for (option of component.options) {
                         if (component._selected_option == option.id && option._item_selection) {
-                            ctrl.userInput.components.push({
+                            var c_ = {
                                 selection: [
                                     {
                                         "item_type_option_id": option._item_type_selection ? option._item_type_selection : "",
@@ -525,23 +524,42 @@
                                     }
                                 ],
                                 "component_id": component.id
-                            });
-                            index = index + 1;
+                            };
+                            index++;
+                            if (j == alternatives_index) {
+                                index = ctrl.patchAlternatives(alternatives, index)
+                                c_.alternatives = alternatives;
+                            }
+                            ctrl.userInput.components.push(c_);
                         }
                     }
+                    j++;
                 }
+                if (ctrl.userInput.components.length - 1 < alternatives_index) {
+                    var componentId = ctrl.selectedPackage.details.components[alternatives_index].id;
+                    var c_ = {component_id: componentId};
+                    index = ctrl.patchAlternatives(alternatives, index)
+                    c_.alternatives = alternatives;
+                    ctrl.userInput.components.push(c_);
+                }
+
+            }
+
+            ctrl.patchAlternatives = function(alternatives, index) {
+                for (alt of alternatives) {
+                    alt.index = index;
+                    if (!ctrl.indexToKeyMap) {
+                        ctrl.indexToKeyMap = {};
+                    }
+                    ctrl.indexToKeyMap[alt.index] = alt.key;
+                    index++;
+                }
+                return index;
             }
 
             ctrl.getPrices = function(alternatives, componentId, index) {
                 ctrl.priceCalculation = true;
-                ctrl.calculateRequestBody();
-                if (!ctrl.userInput.components) {
-                    ctrl.userInput.components = [];
-                }
-                if (ctrl.userInput.components.length - 1 < index) {
-                    ctrl.userInput.components.push({component_id: componentId});
-                }
-                ctrl.userInput.components[index].alternatives = alternatives;
+                ctrl.calculateRequestBody(alternatives, index);
                 RemoteService.getPackagePricesWithAlternatives(ctrl.selectedPackage.sfdcId, ctrl.userInput)
                 .then(function success(response) {
                     ctrl.priceCalculation = false;
@@ -549,7 +567,15 @@
                     console.log(response);
                     ctrl.data = response.data;
                     ctrl.originalPrice = ctrl.data.original_price;
-                    ctrl.pricesWithAlternatives = ctrl.data.prices2;
+                    ctrl.pricesWithAlternatives = {};
+                    for (price of ctrl.data.results_by_index) {
+                        for (index of price.indexes) {
+                            var key = ctrl.indexToKeyMap[index];
+                            if (key) {
+                                ctrl.pricesWithAlternatives[key] = price;
+                            }
+                        }
+                    }
                 }, function fail(data) {
                     ctrl.priceCalculation = false;
                 });
