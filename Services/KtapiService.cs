@@ -56,7 +56,7 @@ namespace Client2.Utils
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.Add("Authorization", $"Keypair key=\"{key}\" secret=\"{secret}\"");
             var response = await client.PostAsync(
-                    $"{endpoint}/v1.0/packages/{packageId}/prices_with_alternatives",
+                    $"{endpoint}/v2.0/packages/{packageId}/prices",
                     new StringContent(data.ToString()));
             string content = await response.Content.ReadAsStringAsync();
             var prices = JObject.Parse(content);

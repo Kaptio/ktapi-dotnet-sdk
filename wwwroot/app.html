@@ -337,8 +337,6 @@
                 ctrl.calculateRequestBody();
                 RemoteService.getPackagePrices(ctrl.selectedPackage.sfdcId, ctrl.userInput)
                 .then(function success(data) {
-                    console.log('DDDDDDD');
-                    console.log(data);
                     ctrl.prices = data.prices;
                     // if (data.prices && data.prices.message) {
                     //     alert(data.prices.message);

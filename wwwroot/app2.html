@@ -427,10 +427,13 @@
                     }
                 }
 
-                if (ctrl.pricesWithAlternatives && ctrl.pricesWithAlternatives[key] != null) {
-                    if (typeof ctrl.pricesWithAlternatives[key] === 'string') {
-                        return '(' + ctrl.pricesWithAlternatives[key] + ')';
+                if (ctrl.pricesWithAlternatives && ctrl.pricesWithAlternatives[key]) {
+                    if (typeof ctrl.pricesWithAlternatives[key].message === 'string') {
+                        return '(' + ctrl.pricesWithAlternatives[key].message + ')';
+                    } else if (typeof ctrl.pricesWithAlternatives[key].message === 'object' && typeof ctrl.pricesWithAlternatives[key].message['message'] === 'string') {
+                        return '(' + ctrl.pricesWithAlternatives[key].message['message'] + ')';
                     }
+
                     var componentPrice = ctrl.pricesWithAlternatives[key]['prices_by_index'][ctrl.currentStep - 1]['price'];
                     return '(' + componentPrice['net'] + ' ' +  componentPrice['currency'] + ')';
                 }
@@ -460,7 +463,14 @@
                         return ctrl.pricesWithAlternatives[key];
                     }
                     var totalPrice = ctrl.pricesWithAlternatives[key].total_price;
-                    return totalPrice.net + ' ' +  totalPrice.currency;
+                    if (totalPrice) {
+                        return totalPrice.net + ' ' +  totalPrice.currency;
+                    } else if (ctrl.pricesWithAlternatives[key].message && typeof ctrl.pricesWithAlternatives[key].message === 'string') {
+                        return ctrl.pricesWithAlternatives[key].message;
+                    } else if (ctrl.pricesWithAlternatives[key].message && typeof ctrl.pricesWithAlternatives[key].message === 'object' && typeof ctrl.pricesWithAlternatives[key].message['message'] === 'string') {
+                        return ctrl.pricesWithAlternatives[key].message['message'];
+                    }
+                    return '';
                 } else if (ctrl.originalPrice && ctrl.originalPrice.total_price && ctrl.originalPrice.total_price.net && ctrl.originalPrice.total_price.net > 0) {
                     return ctrl.originalPrice.total_price.net + ctrl.originalPrice.total_price.currency
                 }
@@ -605,6 +615,7 @@
 
             ctrl.showPackegesList = function() {
                 $location.path('/');
+                ctrl.selectedPackage = null;
                 RemoteService.getPackages(ctrl.pagination).then(
                     function success(data) {
                         ctrl.packages = data.packages;
