@@ -119,7 +119,7 @@
                     <div class="slds-col slds-size_1-of-2">
 
                         <div ng-if="ctrl.currentStep == 0">
-                            <div class="c-schedules" style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
+                            <!-- <div class="c-schedules" style="margin: 10px 0; padding: 10px; border: 1px solid #c0c0c0; border-radius: 5px;">
                                 <div ng-repeat="s in ctrl.selectedPackage.details.package_schedules">
                                     <div>
                                         <b>Schedule:</b> <b>{{s.name}}</b>
@@ -128,7 +128,7 @@
                                         {{tp.start_date}} | {{tp.end_date}} | Days of the Week: {{tp.days_of_week}}
                                     </div>
                                 </div>
-                            </div>
+                            </div> -->
 
                             <div class="slds-form-element">
                                 <label class="slds-form-element__label" for="total-people">Date</label>
@@ -501,14 +501,14 @@
                 locale: {
                     firstDayOfWeek: 1
                 },
-                enable: [
-                    function(date) {
-                        // return true to disable
-                        return ctrl.selectedPackage.details.package_schedules[0].time_periods[0].days_of_week.indexOf(date.getDay() - 1) > -1;
-                    }
-                ],
-                minDate: '2018-06-16',
-                maxDate: '2018-08-26'
+                // enable: [
+                //     function(date) {
+                //         // return true to disable
+                //         return ctrl.selectedPackage.details.package_schedules[0].time_periods[0].days_of_week.indexOf(date.getDay() - 1) > -1;
+                //     }
+                // ],
+                // minDate: '2018-06-16',
+                // maxDate: '2018-08-26'
             };
 
             ctrl.datePostSetup = function(fpItem) {

@@ -35,7 +35,11 @@
 
         // destroy the flatpickr instance when the dom element is removed
         element.on('$destroy', function () {
-          vp.destroy();
+          try {
+            vp.destroy();
+          } catch(e) {
+
+          }
         });
       }
     };
