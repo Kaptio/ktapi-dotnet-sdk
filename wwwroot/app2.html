@@ -152,6 +152,15 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div>
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label" for="channel-id">Channel ID</label>
+                                    <div class="slds-form-element__control">
+                                        <input type="text" id="channel-id" ng-model="ctrl.userInput.channel_id" class="slds-input" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
 
@@ -511,7 +520,8 @@
             ctrl.data = {};
 
             ctrl.userInput = {
-                channel_id: 'a13b000000ApZXCAA3',
+                // channel_id: 'a13b000000ApZXCAA3',
+                channel_id: '- please enter Channel ID -',
                 total_people: 1,
                 date: null,
                 components: []
