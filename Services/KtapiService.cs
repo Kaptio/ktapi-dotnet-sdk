@@ -59,6 +59,9 @@ namespace Client2.Utils
                     $"{endpoint}/v2.0/packages/{packageId}/prices",
                     new StringContent(data.ToString()));
             string content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("========================");
+            Console.WriteLine(content);
+            Console.WriteLine("========================");
             var prices = JObject.Parse(content);
             return prices;
         }

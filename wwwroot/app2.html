@@ -394,6 +394,7 @@
 
             ctrl.buildAlternatives = function(component) {
                 var alternatives = [];
+                //if (!component || component.options) return alternatives;
                 for (option of component.options) {
                     for (item1 of option.offered_item_options) {
                         if (option.offered_item_type_options && option.offered_item_type_options.length > 0) {
@@ -444,7 +445,7 @@
                     }
 
                     var componentPrice = ctrl.pricesWithAlternatives[key]['prices_by_index'][ctrl.currentStep - 1]['price'];
-                    return '(' + componentPrice['net'] + ' ' +  componentPrice['currency'] + ')';
+                    return '(' + componentPrice['sales'] + ' ' +  componentPrice['currency'] + ')';
                 }
                 return '';
             }
@@ -473,15 +474,15 @@
                     }
                     var totalPrice = ctrl.pricesWithAlternatives[key].total_price;
                     if (totalPrice) {
-                        return totalPrice.net + ' ' +  totalPrice.currency;
+                        return totalPrice.sales + ' ' +  totalPrice.currency;
                     } else if (ctrl.pricesWithAlternatives[key].message && typeof ctrl.pricesWithAlternatives[key].message === 'string') {
                         return ctrl.pricesWithAlternatives[key].message;
                     } else if (ctrl.pricesWithAlternatives[key].message && typeof ctrl.pricesWithAlternatives[key].message === 'object' && typeof ctrl.pricesWithAlternatives[key].message['message'] === 'string') {
                         return ctrl.pricesWithAlternatives[key].message['message'];
                     }
                     return '';
-                } else if (ctrl.originalPrice && ctrl.originalPrice.total_price && ctrl.originalPrice.total_price.net && ctrl.originalPrice.total_price.net > 0) {
-                    return ctrl.originalPrice.total_price.net + ctrl.originalPrice.total_price.currency
+                } else if (ctrl.originalPrice && ctrl.originalPrice.total_price && ctrl.originalPrice.total_price.sales && ctrl.originalPrice.total_price.sales > 0) {
+                    return ctrl.originalPrice.total_price.sales + ctrl.originalPrice.total_price.currency
                 }
                 return '';
             }
