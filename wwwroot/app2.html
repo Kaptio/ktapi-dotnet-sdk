@@ -236,8 +236,14 @@
                                 >Prev</button>
                             <button
                                 ng-click="ctrl.nextComponent()"
-                                ng-disabled="!ctrl.stepIsValid() || ctrl.currentStep == ctrl.selectedPackage.details.components.length"
+                                ng-disabled="!ctrl.stepIsValid()"
+                                ng-show="ctrl.currentStep < ctrl.selectedPackage.details.components.length"
                                 class="slds-button slds-button_neutral">Next</button>
+                            <button
+                                ng-click="ctrl.showSelectionResults()"
+                                ng-disabled="!ctrl.stepIsValid()"
+                                ng-show="ctrl.currentStep == ctrl.selectedPackage.details.components.length"
+                                class="slds-button slds-button_brand">Finish</button>
                         </div>
                     </div>
                     <div class="slds-col slds-size_1-of-2">
@@ -254,6 +260,22 @@
                             <pre>{{ctrl.userInput | json}}</pre>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div ng-if="ctrl.mode == 'results'">
+                <h1 style="font-size: 2em;">Results</h1>
+                <p>Total: <b>{{ctrl.humanResults.total}}</b></p>
+                <div ng-repeat="c in ctrl.humanResults.components">
+                   <span>{{c.name}}:</span>
+                   <span><b>{{c.option}}</b></span>
+                   (<span>{{c.item_option}}<span ng-if="c.item_type_option"> | {{c.item_type_option}}</span></span>)
+                   - <span><b>{{c.price}}</b></span>
+                </div>
+                <hr>
+                <h1 style="font-size: 2em;">Raw price response</h1>
+                <div>
+                    <pre>{{ctrl.finalPrice | json}}</pre>
                 </div>
             </div>
 
@@ -289,6 +311,10 @@
 
             f.getPackagePricesWithAlternatives = function(packageId, data) {
                 return f.remoteCall('POST', '/api/package/' + packageId + '/prices_with_alternatives', data);
+            }
+
+            f.getPackagePrices = function(packageId, data) {
+                return f.remoteCall('POST', '/api/package/' + packageId + '/prices', data);
             }
 
             f.remoteCall = function(method, url, data) {
@@ -365,11 +391,16 @@
                 ctrl.currentStep = ctrl.currentStep + 1;
                 ctrl.recalculatePrices();
             }
+            ctrl.showSelectionResults = function() {
+                this.mode = 'results';
+                this.getPrices();
+            }
+
 
             ctrl.recalculatePrices = function() {
                 var component = ctrl.selectedPackage.details.components[ctrl.currentStep - 1];
                 var componentAlternatives = ctrl.buildAlternatives(component);
-                ctrl.getPrices(componentAlternatives, component.id, ctrl.currentStep - 1);
+                ctrl.getPrices(componentAlternatives, ctrl.currentStep - 1);
             }
 
             /*
@@ -578,28 +609,80 @@
                 return index;
             }
 
-            ctrl.getPrices = function(alternatives, componentId, index) {
+            ctrl.getPrices = function(alternatives, index) {
                 ctrl.priceCalculation = true;
-                ctrl.calculateRequestBody(alternatives, index);
-                RemoteService.getPackagePricesWithAlternatives(ctrl.selectedPackage.sfdcId, ctrl.userInput)
-                .then(function success(response) {
-                    ctrl.priceCalculation = false;
-                    console.log('Prices:');
-                    console.log(response);
-                    ctrl.data = response.data;
-                    ctrl.originalPrice = ctrl.data.original_price;
-                    ctrl.pricesWithAlternatives = {};
-                    for (price of ctrl.data.results_by_index) {
-                        for (index of price.indexes) {
-                            var key = ctrl.indexToKeyMap[index];
-                            if (key) {
-                                ctrl.pricesWithAlternatives[key] = price;
+                var p_;
+                if (alternatives) {
+                    ctrl.calculateRequestBody(alternatives, index);
+                    RemoteService.getPackagePricesWithAlternatives(ctrl.selectedPackage.sfdcId, ctrl.userInput)
+                    .then(function success(response) {
+                        ctrl.priceCalculation = false;
+                        console.log('Prices:');
+                        console.log(response);
+                        ctrl.data = response.data;
+                        ctrl.originalPrice = ctrl.data.original_result;
+                        ctrl.pricesWithAlternatives = {};
+                        for (price of ctrl.data.results_by_index) {
+                            for (index of price.indexes) {
+                                var key = ctrl.indexToKeyMap[index];
+                                if (key) {
+                                    ctrl.pricesWithAlternatives[key] = price;
+                                }
                             }
                         }
-                    }
-                }, function fail(data) {
-                    ctrl.priceCalculation = false;
-                });
+                    }, function fail(data) {
+                        ctrl.priceCalculation = false;
+                    });
+                } else {
+                    ctrl.calculateRequestBody();
+                    RemoteService.getPackagePrices(ctrl.selectedPackage.sfdcId, ctrl.userInput)
+                    .then(function success(response) {
+                        ctrl.priceCalculation = false;
+                        console.log('Prices X:');
+                        console.log(response);
+                        ctrl.finalPrice = response.prices.results;
+                        
+                        // calculate human results
+                        ctrl.humanResults = {
+                            total: ctrl.finalPrice.total_price.sales + ' ' + ctrl.finalPrice.total_price.currency,
+                            components: []
+                        }
+                        price_by_index = {};
+                        for (var p of ctrl.finalPrice.prices_by_index) {
+                            price_by_index[p.index] = p;
+                        }
+                        var i = 0;
+                        for (var component of ctrl.selectedPackage.details.components) {
+                            var c_ = {
+                                name: component.name,
+                            };
+                            for (var option of component.options) {
+                                if (option.id == component._selected_option) {
+                                    c_.option = option.item.name;
+                                    for (var b of option.offered_item_options) {
+                                        if (b.item_option.id == option._item_selection) {
+                                            c_.item_option = b.item_option.name;
+                                        }
+                                    }
+                                    if (option._item_type_selection) {
+                                        for (var b of option.offered_item_type_options) {
+                                            if (b.item_type_option.id == option._item_type_selection) {
+                                                c_.item_type_option = b.item_type_option.name;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            c_.price = price_by_index[i].price.sales + ' ' + price_by_index[i].price.currency
+                            i++;
+                            
+                            ctrl.humanResults.components.push(c_);
+                        }
+
+                    }, function fail(data) {
+                        ctrl.priceCalculation = false;
+                    });
+                }
             }
 
             // Router
