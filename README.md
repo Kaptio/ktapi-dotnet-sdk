@@ -1,5 +1,4 @@
-
-# .NET Clien Kit for KTAPI
+# .NET Starter Kit for KTAPI
 
 Example ASP.NET Core 2.0 project for KTAPI integration.
 
@@ -16,8 +15,6 @@ Example ASP.NET Core 2.0 project for KTAPI integration.
 3. Create copy with appsettings.Development-example.json with name appsettings.Development.json and provide values for settings
 4. Run `dotnet restore`
 5. Run `dotnet ef database update` to init database
-6. Run `dotnet run` or `dotnet watch run` (for development)
-7. Open in browser http://localhost:8081/app.html - this is an AngularJS SPA Client. First run will take some time to get all packages from KTAPI and store them to the local DB.
-
-More details here
-https://kaptio.atlassian.net/browse/API-28
+6. Set the environment variable `ASPNETCORE_ENVIRONMENT=Development`
+7. Run `dotnet run` or `dotnet watch run` (for development)
+8. Open in browser http://localhost:8081/app2.html - this is an AngularJS SPA Client. First run will take some time to get all packages from KTAPI and store them to the local DB.
